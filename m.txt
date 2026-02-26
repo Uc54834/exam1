@@ -1,0 +1,68 @@
+#include <mpi.h>
+#include <stdio.h>
+#include <stdlib.h> 
+
+int main (int argc, char**argv){
+    int rank, Size;
+    float b1, b2, b3, h, area;
+
+   
+    MPI_Init(&argc, &argv);
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &Size); 
+
+    if (Size < 5) {
+        if (rank == 0) {
+            fprintf(stderr, "Error: This program requires 5 processes.\n");
+        }
+        MPI_Finalize();
+        return 0;
+    }
+
+    if (rank == 0) {
+        printf("Enter b1, b2, b3 and h (separated by spaces): ");
+       
+        if (scanf("%f %f %f %f", &b1, &b2, &b3, &h) != 4) {
+            fprintf(stderr, "Error reading input.\n");
+            MPI_Finalize();
+            return 1;
+        }
+    }
+
+    
+    MPI_Bcast(&b1, 1, MPI_FLOAT, 0, MPI_COMM_WORLD);
+    MPI_Bcast(&b2, 1, MPI_FLOAT, 0, MPI_COMM_WORLD);
+    MPI_Bcast(&b3, 1, MPI_FLOAT, 0, MPI_COMM_WORLD);
+    MPI_Bcast(&h, 1, MPI_FLOAT, 0, MPI_COMM_WORLD);
+    if (rank == 1) {
+        area = 0.5f * b1 * h;
+      
+        MPI_Send(&area, 1, MPI_FLOAT, 4, 0, MPI_COMM_WORLD);
+    } else if (rank == 2) {
+        area = b2 * h; 
+        MPI_Send(&area, 1, MPI_FLOAT, 4, 0, MPI_COMM_WORLD);
+    } else if (rank == 3) {
+        area = 0.5f * b3 * h;
+        MPI_Send(&area, 1, MPI_FLOAT, 4, 0, MPI_COMM_WORLD);
+    } else if (rank == 4) {
+        float a1, a2, a3;
+
+      
+        MPI_Recv(&a1, 1, MPI_FLOAT, 1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+        MPI_Recv(&a2, 1, MPI_FLOAT, 2, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+        MPI_Recv(&a3, 1, MPI_FLOAT, 3, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+
+        printf("\nResult (Displayed by process 4)--\n");
+   
+        printf("Area 1 (Triangle): %.2f\n", a1);
+        printf("Area 2 (Rectangle): %.2f\n", a2);
+        printf("Area 3 (Triangle): %.2f\n", a3);
+        printf("Total Area: %.2f\n", a1 + a2 + a3);
+    }
+
+    MPI_Finalize();
+    return 0;
+}
+----
+mpicc filname.c -o filename
+mpirunn -np 4 ./filename

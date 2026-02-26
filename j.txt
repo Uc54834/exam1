@@ -1,0 +1,82 @@
+em-----
+import java.rmi.RemoteException;
+import java.rmi.server.UnicastRemoteObject;
+
+public class Employee extends UnicastRemoteObject implements EmployeeInterface {
+
+    public Employee() throws RemoteException {
+        super();
+    }
+
+    @Override
+    public double calculateNetSalary(double basicSalary) throws RemoteException {
+        double allowance = basicSalary * 0.20;
+        double deduction = basicSalary * 0.10;
+        double netSalary = basicSalary + allowance - deduction;
+        return netSalary;
+    }
+}
+----------cl
+import java.rmi.Naming;
+import java.util.Scanner;
+
+public class EmployeeClient {
+    public static void main(String args[]) {
+        try {
+            Scanner sc = new Scanner(System.in);
+
+            System.out.print("Enter basic salary: ");
+            double basic = sc.nextDouble();
+
+            EmployeeInterface stub =
+                (EmployeeInterface) Naming.lookup("rmi://localhost/salaryservice");
+
+            double netSalary = stub.calculateNetSalary(basic);
+
+            System.out.println("Net Salary is: " + netSalary);
+            sc.close();
+        }
+        catch (Exception e) {
+            System.out.println("Client Error: " + e.getMessage());
+        }
+    }
+}
+
+----------inter
+import java.rmi.Remote;
+import java.rmi.RemoteException;
+
+public interface EmployeeInterface extends Remote {
+    double calculateNetSalary(double basicSalary) throws RemoteException;
+}
+-------sever
+
+import java.rmi.Naming;
+import java.rmi.registry.LocateRegistry;
+
+public class EmployeeServer {
+    public static void main(String[] args) {
+        try {
+         
+            LocateRegistry.createRegistry(1099);
+
+          
+            Employee obj = new Employee();
+
+        
+            Naming.rebind("salaryservice", obj);
+
+            System.out.println("Employee server is running...");
+        } 
+        catch (Exception e) {
+            System.out.println("Server Error: " + e.getMessage());
+        }
+    }
+}
+
+javac *.java
+rmic classname
+rmi registary &
+java name_server
+java client
+

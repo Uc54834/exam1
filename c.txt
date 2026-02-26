@@ -1,0 +1,47 @@
+struct Rectangale {
+	float length;
+	float width;
+};
+
+struct Trangale {
+	float hight;
+	float length;
+};
+
+program CAL_PROG {
+	
+	version CAL1_VERSION {
+
+		float RECTANGALE_AREA(Rectangle) = 1;
+		float RECTANGALE_PRIMETER(Rectangle) = 2;
+
+	} = 1;
+
+	version CAL2_VERSION {
+
+		float TRANGALE_AREA(Rectangle) =3;
+		float TRANGALE_PRIMETER(Rectangle) =4;
+
+} = 2;
+
+
+} = 0x23456178;
+---------------------------------
+struct student_marks {
+	int mark1;
+	int mark2;
+	int mark3;
+};
+
+program AVERAGE_PROG {
+	version AVERA_VERS {
+	 double GET_AVERAGE(student_marks) = 1;
+
+	} =1;
+
+} = 0x2345111;
+-------
+rpcgen -a -C q1.x
+make -f Makefile.q1
+sudo ./q1.server
+sudo .hw.client localhost
