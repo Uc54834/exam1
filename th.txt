@@ -1,0 +1,207 @@
+int pir = 13;
+int motion;
+
+void setup() {
+  pinMode(pir, INPUT);
+  Serial.begin(9600);
+}
+
+void loop() {
+
+  motion = digitalRead(pir);
+
+  if(motion == HIGH){
+    Serial.println(1);   // motion detected
+  }
+  else{
+    Serial.println(0);   // no motion
+  }
+
+  delay(500);
+}
+-----------------------------------------------M
+#include <Wire.h>
+#include <LiquidCrystal_I2C.h>
+
+LiquidCrystal_I2C lcd(0x27,16,2);
+
+int led = 13;
+int buzzer = 12;
+int motion;
+
+void setup() {
+
+  Serial.begin(9600);
+
+  lcd.init();
+  lcd.backlight();
+
+  pinMode(led, OUTPUT);
+  pinMode(buzzer, OUTPUT);
+}
+
+void loop() {
+
+  if(Serial.available()){
+
+    motion = Serial.parseInt();
+
+    lcd.clear();
+
+    if(motion == 1){
+
+      lcd.setCursor(0,0);
+      lcd.print("Motion Detected");
+
+      digitalWrite(led, HIGH);
+      digitalWrite(buzzer, HIGH);
+    }
+
+    else{
+
+      lcd.setCursor(0,0);
+      lcd.print("No Motion");
+
+      digitalWrite(led, LOW);
+      digitalWrite(buzzer, LOW);
+    }
+  }
+}
+--------------------------------------------------
+int sensorPin = A0;
+int value;
+
+void setup() {
+  Serial.begin(9600);
+}
+
+void loop() {
+
+  value = analogRead(sensorPin);   // read soil moisture
+  Serial.println(value);           // send value to Arduino 2
+
+  delay(500);
+}
+----------------------------------------------------
+#include <Wire.h>
+#include <LiquidCrystal_I2C.h>
+
+LiquidCrystal_I2C lcd(0x27,16,2);
+
+int buzzer = 13;
+int value;
+int threshold = 400;
+
+void setup() {
+
+  Serial.begin(9600);
+  lcd.init();
+  lcd.backlight();
+
+  pinMode(buzzer, OUTPUT);
+}
+
+void loop() {
+
+  if (Serial.available()) {
+
+    value = Serial.parseInt();
+
+    lcd.clear();
+
+    if (value < threshold) {
+
+      lcd.setCursor(0,0);
+      lcd.print("Soil Dry");
+
+      digitalWrite(buzzer, HIGH);
+    }
+
+    else {
+
+      lcd.setCursor(0,0);
+      lcd.print("Soil Moist");
+
+      digitalWrite(buzzer, LOW);
+    }
+
+    delay(500);
+  }
+}
+---------------------------------
+void setup(){
+  Serial.begin(9600);
+}
+void loop (){
+  Serial.println("Hello");
+  delay(1000);
+}
+-------------------------------------
+
+void setup()
+{
+  Serial.begin(9600);
+}
+
+void loop()
+{
+  if(Serial.available()){
+    String msg = Serial.readString();
+    Serial.println(msg);
+  }
+}
+-----------------------------------------
+int sensorPin = A0;
+int value;
+
+void setup() {
+  Serial.begin(9600);
+}
+
+void loop() {
+  value = analogRead(sensorPin);
+  Serial.println(value);   // send value to slave
+  delay(500);
+}
+------------------------------------------------
+int red = 13;
+int yellow = 12;
+int green = 11;
+
+int value;
+
+void setup() {
+  Serial.begin(9600);
+  pinMode(red, OUTPUT);
+  pinMode(yellow, OUTPUT);
+  pinMode(green, OUTPUT);
+}
+
+void loop() {
+  if (Serial.available()) {
+    value = Serial.parseInt();
+
+    // Soil dry
+    if (value < 200) {
+      digitalWrite(red, HIGH);
+      digitalWrite(yellow, LOW);
+      digitalWrite(green, LOW);
+    }
+    // Soil medium
+    else if (value >= 200 && value < 500) {
+      digitalWrite(red, LOW);
+      digitalWrite(yellow, HIGH);
+      digitalWrite(green, LOW);
+    }
+    // Soil wet
+    else if (value >= 500) {
+      digitalWrite(red, LOW);
+      digitalWrite(yellow, LOW);
+      // Blink green
+      digitalWrite(green, HIGH);
+      delay(300);
+      digitalWrite(green, LOW);
+      delay(300);
+    }
+  }
+}

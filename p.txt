@@ -1,0 +1,300 @@
+#include <Arduino.h>
+#include <Wire.h>
+#include <LiquidCrystal_I2C.h>
+#include <Servo.h>
+
+void resetGame();   // Function prototype
+
+LiquidCrystal_I2C lcd(0x27,16,2);
+Servo prizeServo;
+
+int leds[7] = {2,3,4,5,6,7,8};
+
+int startBtn = 9;
+int luckBtn = 10;
+
+int servoPin = 11;
+
+int currentLed = 0;
+int direction = 1;
+
+int wins = 0;
+int attempts = 0;
+
+bool running = false;
+
+void setup()
+{
+  for(int i=0;i<7;i++)
+  {
+    pinMode(leds[i],OUTPUT);
+  }
+
+  pinMode(startBtn,INPUT_PULLUP);
+  pinMode(luckBtn,INPUT_PULLUP);
+
+  prizeServo.attach(servoPin);
+
+  lcd.init();
+  lcd.backlight();
+
+  lcd.setCursor(0,0);
+  lcd.print("Press Start");
+}
+
+void loop()
+{
+
+  // Start button
+  if(digitalRead(startBtn)==LOW && !running)
+  {
+    running=true;
+    lcd.clear();
+    lcd.print("Game Start");
+    delay(1000);
+    lcd.clear();
+  }
+
+  if(running)
+  {
+    // Turn off all LEDs
+    for(int i=0;i<7;i++)
+    {
+      digitalWrite(leds[i],LOW);
+    }
+
+    // Turn on current LED
+    digitalWrite(leds[currentLed],HIGH);
+
+    delay(120);
+
+    // Move LED forward/backward
+    currentLed += direction;
+
+    if(currentLed==6 || currentLed==0)
+    {
+      direction = -direction;
+    }
+
+    // Luck button pressed
+    if(digitalRead(luckBtn)==LOW)
+    {
+      attempts++;
+
+      if(currentLed==3)   // 4th LED (index 3)
+      {
+        wins++;
+
+        lcd.clear();
+        lcd.print("You Win!");
+        delay(1500);
+      }
+      else
+      {
+        lcd.clear();
+        lcd.print("You Lose!");
+        delay(1500);
+      }
+
+      lcd.clear();
+      lcd.print("Score:");
+      lcd.print(wins);
+
+      delay(1500);
+
+      // If player wins 3 times
+      if(wins==3)
+      {
+        lcd.clear();
+        lcd.print("Jackpot!");
+
+        prizeServo.write(90);
+        delay(3000);
+        prizeServo.write(0);
+
+        resetGame();
+      }
+
+      // If attempts reach 3 and no 3 wins
+      if(attempts==3 && wins<3)
+      {
+        lcd.clear();
+        lcd.print("Game Over");
+        delay(3000);
+
+        resetGame();
+      }
+    }
+  }
+}
+
+void resetGame()
+{
+  wins = 0;
+  attempts = 0;
+  running = false;
+
+  lcd.clear();
+  lcd.print("Press Start");
+}
+---------------
+#include <Wire.h>
+#include <LiquidCrystal_I2C.h>
+
+LiquidCrystal_I2C lcd(0x27,16,2);
+
+// Buttons
+int startBtn = 2;
+int feedBtn = 3;
+int playBtn = 4;
+
+// RGB LED
+int redPin = 9;
+int greenPin = 10;
+int bluePin = 11;
+
+// Buzzer
+int buzzer = 5;
+
+// Game variables
+int health = 70;
+int happiness = 50;
+
+bool gameStarted = false;
+
+unsigned long lastDecrease = 0;
+
+void setup()
+{
+  pinMode(startBtn, INPUT_PULLUP);
+  pinMode(feedBtn, INPUT_PULLUP);
+  pinMode(playBtn, INPUT_PULLUP);
+
+  pinMode(redPin, OUTPUT);
+  pinMode(greenPin, OUTPUT);
+  pinMode(bluePin, OUTPUT);
+
+  pinMode(buzzer, OUTPUT);
+
+  lcd.init();
+  lcd.backlight();
+
+  lcd.setCursor(0,0);
+  lcd.print("Virtual Pet");
+  lcd.setCursor(0,1);
+  lcd.print("Press Start");
+}
+
+void loop()
+{
+
+  if(digitalRead(startBtn)==LOW && !gameStarted)
+  {
+    gameStarted = true;
+    health = 70;
+    happiness = 50;
+    lcd.clear();
+  }
+
+  if(gameStarted)
+  {
+
+    // health decreases every 5 seconds
+    if(millis() - lastDecrease > 5000)
+    {
+      health -= 2;
+      if(health < 0) health = 0;
+      lastDecrease = millis();
+    }
+
+    // Feed Button
+    if(digitalRead(feedBtn)==LOW)
+    {
+      health += 20;
+      if(health > 100) health = 100;
+      delay(300);
+    }
+
+    // Play Button
+    if(digitalRead(playBtn)==LOW)
+    {
+      happiness += 10;
+      health -= 5;
+
+      if(happiness > 100) happiness = 100;
+      if(health < 0) health = 0;
+
+      delay(300);
+    }
+
+    updateEmotion();
+    displayStatus();
+  }
+
+}
+
+void updateEmotion()
+{
+
+  if(health < 30)
+  {
+    // Sad
+    digitalWrite(redPin, HIGH);
+    digitalWrite(greenPin, LOW);
+    digitalWrite(bluePin, LOW);
+
+    tone(buzzer,1000);
+  }
+
+  else if(health > 70 && happiness > 50)
+  {
+    // Happy
+    digitalWrite(redPin, LOW);
+    digitalWrite(greenPin, HIGH);
+    digitalWrite(bluePin, LOW);
+
+    noTone(buzzer);
+  }
+
+  else
+  {
+    // Okay (Yellow)
+    digitalWrite(redPin, HIGH);
+    digitalWrite(greenPin, HIGH);
+    digitalWrite(bluePin, LOW);
+
+    noTone(buzzer);
+  }
+
+}
+
+void displayStatus()
+{
+  lcd.clear();
+
+  lcd.setCursor(0,0);
+  lcd.print("H:");
+  lcd.print(health);
+  lcd.print("% ");
+
+  lcd.print("P:");
+  lcd.print(happiness);
+  lcd.print("%");
+
+  lcd.setCursor(0,1);
+
+  if(health < 30)
+  {
+    lcd.print("Sad! Feed Me!");
+  }
+  else if(health > 70 && happiness > 50)
+  {
+    lcd.print("Pet is Happy!");
+  }
+  else
+  {
+    lcd.print("Pet is Okay");
+  }
+
+  delay(1000);
+}
